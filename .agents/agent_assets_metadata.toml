@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "8pZt5gRmTmymQF9BSD0Bs"
+uri = "file://artifacts/shaqo-mobile/assets/images/icon.png"
+type = "image"
+title = "shaqo app icon"
+
+[[generated]]
+id = "oolHQC_RiNWb0b6QBPWfU"
+uri = "file://artifacts/shaqo-mobile/assets/images/services-banner.png"
+type = "image"
+title = "service categories banner"
