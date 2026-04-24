@@ -19,6 +19,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
+Route::post('/send-code', [AuthController::class, 'sendCode']);
+Route::post('/verify-code', [AuthController::class, 'verifyCode']);
 Route::get('/workers', [WorkerController::class, 'index']);
 Route::get('/workers/{id}', [WorkerController::class, 'show']);
 
