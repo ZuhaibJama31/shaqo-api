@@ -3,19 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Client;
-use App\Models\Worker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Twilio\Rest\Client as TwilioClient;
 
 class AuthController extends Controller
 {
-    /**
-     * Send OTP Code
-     * POST /api/send-code
-     */
     public function sendCode(Request $request)
     {
         $data = $request->validate([
@@ -37,10 +32,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Verify OTP Code
-     * POST /api/verify-code
-     */
     public function verifyCode(Request $request)
     {
         $data = $request->validate([
@@ -72,25 +63,43 @@ class AuthController extends Controller
         ]);
     }
 
-    
     public function register(Request $request)
     {
         $data = $request->validate([
-            'name'     => 'required|string|max:100',
-            'phone'    => 'required|string|unique:users,phone',
-            'password' => 'required|string|min:6',
-            'role'     => 'required|in:client,worker,admin',
-            'city'     => 'nullable|string',
+            'name'        => 'required|string|max:100',
+            'phone'       => 'required|string|unique:users,phone',
+            'password'    => 'required|string|min:6',
+            'role'        => 'required|in:client,worker,admin',
+            'city'        => 'nullable|string',
+            'category_id' => 'required_if:role,worker|nullable|exists:categories,id',
         ]);
 
-        $user = User::create([
-            'name'     => $data['name'],
-            'phone'    => $data['phone'],
-            'password' => Hash::make($data['password']),
-            'role'     => $data['role'],
-            'city'     => $data['city'] ?? null,
-        ]);
+        // Secure creation with a DB Transaction
+        $user = DB::transaction(function () use ($data) {
+            
+            $user = User::create([
+                'name'     => $data['name'],
+                'phone'    => $data['phone'],
+                'password' => Hash::make($data['password']),
+                'role'     => $data['role'],
+                'city'     => $data['city'] ?? null,
+            ]);
 
+            if ($data['role'] === 'client') {
+                $user->client()->create([]);
+            }
+
+            if ($data['role'] === 'worker') {
+                $user->worker()->create([
+                    'category_id'  => $data['category_id'],
+                    'hourly_rate'  => 0,
+                    'is_available' => true,
+                    'rating'       => 0,
+                ]);
+            }
+
+            return $user;
+        });
 
         $token = $user->createToken('app-token')->plainTextToken;
 
@@ -101,10 +110,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    /**
-     * Login
-     * POST /api/login
-     */
     public function login(Request $request)
     {
         $data = $request->validate([
@@ -131,9 +136,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Logout
-     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -143,9 +145,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Current User
-     */
     public function me(Request $request)
     {
         return response()->json(

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('rating', 3, 2)->default(0);
             $table->integer('total_jobs')->default(0);
             $table->timestamps();
-});
+        });
     }
 
     public function down(): void

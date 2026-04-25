@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,9 +11,6 @@ class Client extends Model
 
     protected $fillable = [
         'user_id',
-        'name',
-        'phone',
-        'city',
         'address',
     ];
 
