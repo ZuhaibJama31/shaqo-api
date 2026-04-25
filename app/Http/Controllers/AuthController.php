@@ -85,19 +85,6 @@ class AuthController extends Controller
                 'city'     => $data['city'] ?? null,
             ]);
 
-            if ($data['role'] === 'client') {
-                $user->client()->create([]);
-            }
-
-            if ($data['role'] === 'worker') {
-                $user->worker()->create([
-                    'category_id'  => $data['category_id'],
-                    'hourly_rate'  => 0,
-                    'is_available' => true,
-                    'rating'       => 0,
-                ]);
-            }
-
             return $user;
         });
 

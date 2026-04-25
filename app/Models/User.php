@@ -22,6 +22,28 @@ class User extends Authenticatable implements FilamentUser
         'city',
     ];
 
+    protected static function booted()
+{
+    static::created(function ($user) {
+        
+        if ($user->role === 'client') {
+            $user->client()->create([]);
+        }
+
+        if ($user->role === 'worker') {
+            $user->worker()->create([
+                // request() grabs it from Postman. 
+                // Defaulting to 1 prevents Filament from crashing.
+                'category_id'  => request('category_id') ?? 1, 
+                'hourly_rate'  => 0,
+                'is_available' => true,
+                'rating'       => 0,
+            ]);
+        }
+
+    });
+}
+
     protected $hidden = [
         'password',
         'remember_token',
