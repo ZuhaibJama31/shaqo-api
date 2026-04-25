@@ -17,11 +17,11 @@ class ClientsTable
                 TextColumn::make('user_id')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('name')
+                TextColumn::make('user.name')
                     ->searchable(),
-                TextColumn::make('phone')
+                TextColumn::make('user.phone')
                     ->searchable(),
-                TextColumn::make('city')
+                TextColumn::make('user.city')
                     ->searchable(),
                 TextColumn::make('address')
                     ->searchable(),
