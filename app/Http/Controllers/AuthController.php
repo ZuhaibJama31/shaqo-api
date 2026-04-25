@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Client;
+use App\Models\Worker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Twilio\Rest\Client;
+use Twilio\Rest\Client as TwilioClient;
 
 class AuthController extends Controller
 {
@@ -20,7 +22,7 @@ class AuthController extends Controller
             'phone' => 'required|string'
         ]);
 
-        $twilio = new Client(
+        $twilio = new TwilioClient(
             config('services.twilio.sid'),
             config('services.twilio.token')
         );
@@ -46,7 +48,7 @@ class AuthController extends Controller
             'code'  => 'required|string'
         ]);
 
-        $twilio = new Client(
+        $twilio = new TwilioClient(
             config('services.twilio.sid'),
             config('services.twilio.token')
         );
@@ -70,10 +72,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Register after OTP verified
-     * POST /api/register
-     */
+    
     public function register(Request $request)
     {
         $data = $request->validate([
@@ -91,6 +90,20 @@ class AuthController extends Controller
             'role'     => $data['role'],
             'city'     => $data['city'] ?? null,
         ]);
+
+
+        if ($data['role'] == "client") {
+            CLient::create([
+                'user_id' => $user->id
+            ]);
+        }
+
+        
+        if ($data['role'] == "worker") {
+            Worker::create([
+                'user_id' => $user->id
+            ]);
+        }
 
         $token = $user->createToken('app-token')->plainTextToken;
 
