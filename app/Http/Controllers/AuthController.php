@@ -92,19 +92,6 @@ class AuthController extends Controller
         ]);
 
 
-        if ($data['role'] == "client") {
-            CLient::create([
-                'user_id' => $user->id
-            ]);
-        }
-
-        
-        if ($data['role'] == "worker") {
-            Worker::create([
-                'user_id' => $user->id
-            ]);
-        }
-
         $token = $user->createToken('app-token')->plainTextToken;
 
         return response()->json([

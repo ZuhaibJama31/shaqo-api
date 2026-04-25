@@ -23,7 +23,21 @@ class User extends Authenticatable implements FilamentUser
         'role',
         'city',
     ];
+protected static function booted()
+{
+    static::created(function ($user) {
 
+        if ($user->role === 'client') {
+            $user->client()->create();
+        }
+
+        if ($user->role === 'worker') {
+            $user->worker()->create([
+            ]);
+        }
+
+    });
+}
     protected $hidden = [
         'password',
         'remember_token',
@@ -34,14 +48,12 @@ class User extends Authenticatable implements FilamentUser
         'password' => 'hashed',
     ];
 
-    // 3. Add the authorization logic
+   
     public function canAccessPanel(Panel $panel): bool
     {
-        // Example: Only allow users with a 'admin' role
+        
         return $this->role === 'admin';
         
-        // Or for testing/local development, just return true:
-        // return true;
     }
 
     public function worker()
