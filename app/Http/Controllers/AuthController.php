@@ -135,8 +135,8 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         return response()->json(
-            $request->user()->load('worker.category'),
-            $request->user()->load('client'),
+            $request->user()->load('worker.category','client')
+            
 
         );
     }
