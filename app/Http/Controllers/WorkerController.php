@@ -48,7 +48,7 @@ class WorkerController extends Controller
         $data = $request->validate([
             'category_id'      => 'required|exists:categories,id',
             'bio'              => 'nullable|string|max:500',
-            'hourly_rate'      => 'required|numeric|min:0',
+            //'hourly_rate'      => 'required|numeric|min:0',
             'experience_years' => 'nullable|string|max:20',
             'is_available'     => 'boolean',
         ]);

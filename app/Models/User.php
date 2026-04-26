@@ -35,7 +35,7 @@ class User extends Authenticatable implements FilamentUser
                 // request() grabs it from Postman. 
                 // Defaulting to 1 prevents Filament from crashing.
                 'category_id'  => request('category_id') ?? 1, 
-                'hourly_rate'  => 0,
+                //'hourly_rate'  => 0,
                 'is_available' => true,
                 'rating'       => 0,
             ]);

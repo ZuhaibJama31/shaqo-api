@@ -13,7 +13,7 @@ class Worker extends Model
         'user_id',
         'category_id',
         'bio',
-        'hourly_rate',
+        //'hourly_rate',
         'experience_years',
         'is_available',
         'rating',
