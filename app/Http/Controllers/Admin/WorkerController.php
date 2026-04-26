@@ -10,7 +10,7 @@ class WorkerController extends Controller
 {
     /**
      * List available workers (filter by category_id and/or city)
-     * GET /api/workers?category_id=1&city=Mogadishu
+     * GET /api/admin/workers?category_id=1&city=Mogadishu
      */
     public function index(Request $request)
     {

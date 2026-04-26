@@ -21,9 +21,7 @@ class WorkersTable
                 TextColumn::make('category_id')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('hourly_rate')
-                    ->numeric()
-                    ->sortable(),
+                
                 TextColumn::make('experience_years')
                     ->searchable(),
                 IconColumn::make('is_available')

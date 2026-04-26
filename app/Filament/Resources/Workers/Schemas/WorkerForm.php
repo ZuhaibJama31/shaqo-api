@@ -21,10 +21,6 @@ class WorkerForm
                     ->numeric(),
                 Textarea::make('bio')
                     ->columnSpanFull(),
-                TextInput::make('hourly_rate')
-                    ->required()
-                    ->numeric()
-                    ->default(0.0),
                 TextInput::make('experience_years'),
                 Toggle::make('is_available')
                     ->required(),
