@@ -69,9 +69,7 @@ class AuthController extends Controller
             'name'        => 'required|string|max:100',
             'phone'       => 'required|string|unique:users,phone',
             'password'    => 'required|string|min:6',
-            'role'        => 'required|in:client,worker,admin',
             'city'        => 'nullable|string',
-            'category_id' => 'required_if:role,worker|nullable|exists:categories,id',
         ]);
 
         // Secure creation with a DB Transaction
@@ -81,7 +79,7 @@ class AuthController extends Controller
                 'name'     => $data['name'],
                 'phone'    => $data['phone'],
                 'password' => Hash::make($data['password']),
-                'role'     => $data['role'],
+                'role'     => 'client',
                 'city'     => $data['city'] ?? null,
             ]);
 
