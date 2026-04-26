@@ -17,12 +17,20 @@ class ClientsTable
                 TextColumn::make('user_id')
                     ->numeric()
                     ->sortable(),
+                
+                // Added labels to remove duplicate 'User' headers
                 TextColumn::make('user.name')
+                    ->label('Name')
                     ->searchable(),
+                
                 TextColumn::make('user.phone')
+                    ->label('Phone')
                     ->searchable(),
+                
                 TextColumn::make('user.city')
+                    ->label('City')
                     ->searchable(),
+                    
                 TextColumn::make('address')
                     ->searchable(),
                 TextColumn::make('created_at')
@@ -33,17 +41,6 @@ class ClientsTable
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
-            ])
-            ->recordActions([
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 }
