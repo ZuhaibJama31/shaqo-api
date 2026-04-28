@@ -15,27 +15,39 @@ class WorkersTable
     {
         return $table
             ->columns([
-                TextColumn::make('user_id')
-                    ->numeric()
+                TextColumn::make('user.name')
+                    ->label('User Name')
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('category_id')
-                    ->numeric()
+
+                TextColumn::make('category.name')
+                    ->label('Category Name')
+                    ->searchable()
                     ->sortable(),
-                
+
                 TextColumn::make('experience_years')
-                    ->searchable(),
+                    ->label('Experience Years')
+                    ->sortable(),
+
                 IconColumn::make('is_available')
+                    ->label('Available')
                     ->boolean(),
+
                 TextColumn::make('rating')
+                    ->label('Rating')
                     ->numeric()
                     ->sortable(),
+
                 TextColumn::make('total_jobs')
+                    ->label('Total Jobs')
                     ->numeric()
                     ->sortable(),
+
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
