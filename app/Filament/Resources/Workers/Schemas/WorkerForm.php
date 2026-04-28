@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\Workers\Schemas;
 
+use App\Models\User;
+use App\Models\Category;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -13,25 +16,39 @@ class WorkerForm
     {
         return $schema
             ->components([
-                TextInput::make('user_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('category_id')
-                    ->required()
-                    ->numeric(),
+                Select::make('user_id')
+                    ->label('User')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->required(),
+
+                Select::make('category_id')
+                    ->label('Category')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->required(),
+
                 Textarea::make('bio')
                     ->columnSpanFull(),
-                TextInput::make('experience_years'),
+
+                TextInput::make('experience_years')
+                    ->numeric()
+                    ->minValue(0),
+
                 Toggle::make('is_available')
-                    ->required(),
+                    ->label('Is Available')
+                    ->default(true),
+
                 TextInput::make('rating')
-                    ->required()
                     ->numeric()
-                    ->default(0.0),
+                    ->default(0)
+                    ->minValue(0)
+                    ->maxValue(5),
+
                 TextInput::make('total_jobs')
-                    ->required()
                     ->numeric()
-                    ->default(0),
+                    ->default(0)
+                    ->minValue(0),
             ]);
     }
 }
