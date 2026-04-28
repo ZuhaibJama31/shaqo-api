@@ -4,124 +4,128 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
 use App\Models\Booking;
 
 class BookingController extends Controller
 {
     /**
-     * List bookings for the current user
-     * GET /api/bookings
+     * Admin: List all bookings
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-
-        if ($user->role === 'client') {
-            $bookings = Booking::with(['worker.user', 'worker.category'])
-                ->where('client_id', $user->id)
-                ->orderBy('created_at', 'desc')
-                ->get();
-        } else {
-            $worker   = $user->worker;
-
-            if (!$worker) {
-                return response()->json([]);
-            }
-
-            $bookings = Booking::with(['client'])
-                ->where('worker_id', $worker->id)
-                ->orderBy('created_at', 'desc')
-                ->get();
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
+
+        $bookings = Booking::with([
+            'client',
+            'worker.user',
+            'worker.category'
+        ])
+        ->latest()
+        ->get();
 
         return response()->json($bookings);
     }
 
     /**
-     * Create a new booking (clients only)
-     * POST /api/bookings
+     * Admin: Create booking
      */
     public function store(Request $request)
     {
-        $user = $request->user();
-
-        if ($user->role !== 'client') {
-            return response()->json(['message' => 'Only clients can create bookings'], 403);
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $data = $request->validate([
+            'client_id'    => 'required|exists:users,id',
             'worker_id'    => 'required|exists:workers,id',
             'description'  => 'required|string|max:1000',
             'address'      => 'required|string|max:255',
             'city'         => 'required|string|max:100',
-            'scheduled_at' => 'required|date|after:now',
+            'scheduled_at' => 'required|date',
+            'status'       => 'required|in:pending,accepted,rejected,completed,cancelled',
+            'agreed_price' => 'nullable|numeric|min:0',
         ]);
 
-        $booking = Booking::create([
-            'client_id'    => $user->id,
-            'worker_id'    => $data['worker_id'],
-            'description'  => $data['description'],
-            'address'      => $data['address'],
-            'city'         => $data['city'],
-            'scheduled_at' => $data['scheduled_at'],
-            'status'       => 'pending',
-        ]);
+        $booking = Booking::create($data);
 
         return response()->json([
-            'message' => 'Booking request sent successfully',
-            'booking' => $booking->load(['worker.user', 'client']),
+            'message' => 'Booking created successfully',
+            'booking' => $booking->load([
+                'client',
+                'worker.user',
+                'worker.category'
+            ])
         ], 201);
     }
 
     /**
-     * Show a single booking
-     * GET /api/bookings/{id}
+     * Admin: Show one booking
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $booking = Booking::with(['worker.user', 'worker.category', 'client'])
-            ->findOrFail($id);
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $booking = Booking::with([
+            'client',
+            'worker.user',
+            'worker.category'
+        ])->findOrFail($id);
 
         return response()->json($booking);
     }
 
     /**
-     * Update booking status
-     * PUT /api/bookings/{id}
-     * Workers can: accept, reject
-     * Clients can: cancel
-     * Both can: completed
+     * Admin: Update booking
      */
     public function update(Request $request, $id)
     {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $booking = Booking::findOrFail($id);
-        $user    = $request->user();
 
         $data = $request->validate([
-            'status'       => 'required|in:accepted,rejected,completed,cancelled',
+            'client_id'    => 'sometimes|exists:users,id',
+            'worker_id'    => 'sometimes|exists:workers,id',
+            'description'  => 'sometimes|string|max:1000',
+            'address'      => 'sometimes|string|max:255',
+            'city'         => 'sometimes|string|max:100',
+            'scheduled_at' => 'sometimes|date',
+            'status'       => 'sometimes|in:pending,accepted,rejected,completed,cancelled',
             'agreed_price' => 'nullable|numeric|min:0',
         ]);
-
-        // Only the assigned worker can accept or reject
-        if (in_array($data['status'], ['accepted', 'rejected'])) {
-            if ($user->role !== 'worker' || !$user->worker || $user->worker->id !== $booking->worker_id) {
-                return response()->json(['message' => 'Only the assigned worker can accept or reject'], 403);
-            }
-        }
-
-        // Only the client can cancel
-        if ($data['status'] === 'cancelled') {
-            if ($booking->client_id !== $user->id) {
-                return response()->json(['message' => 'Only the client can cancel this booking'], 403);
-            }
-        }
 
         $booking->update($data);
 
         return response()->json([
-            'message' => 'Booking updated',
-            'booking' => $booking->fresh(['worker.user', 'client']),
+            'message' => 'Booking updated successfully',
+            'booking' => $booking->fresh([
+                'client',
+                'worker.user',
+                'worker.category'
+            ])
+        ]);
+    }
+
+    /**
+     * Admin: Delete booking
+     */
+    public function destroy(Request $request, $id)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $booking = Booking::findOrFail($id);
+        $booking->delete();
+
+        return response()->json([
+            'message' => 'Booking deleted successfully'
         ]);
     }
 }
