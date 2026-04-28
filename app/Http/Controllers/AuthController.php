@@ -95,7 +95,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function resetPassword(Request $request)
+    public function password(Request $request)
     {
         $data = $request->validate([
             'phone'                 => 'required|string|exists:users,phone',
