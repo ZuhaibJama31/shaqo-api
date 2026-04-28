@@ -95,6 +95,26 @@ class AuthController extends Controller
         ], 201);
     }
 
+    public function resetPassword(Request $request)
+    {
+        $data = $request->validate([
+            'phone'                 => 'required|string|exists:users,phone',
+            'password'              => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = User::where('phone', $data['phone'])->first();
+
+        $user->update([
+            'password' => Hash::make($data['password'])
+        ]);
+
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Password reset successfully'
+        ]);
+    }
+
     public function login(Request $request)
     {
         $data = $request->validate([
