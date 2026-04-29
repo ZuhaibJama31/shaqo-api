@@ -17,6 +17,7 @@ use App\Http\Controllers\BookingController;
 
 Route::get('/health', function (\Illuminate\Http\Request $request) {
     abort_unless($request->query('key') === 'warm123', 403);
+    DB::select('SELECT 1');
 
     return response()->json(['status' => 'ok']);
 });
