@@ -15,11 +15,10 @@ use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\BookingController;
 
 
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'ok',
-        'time' => now()->toDateTimeString()
-    ]);
+Route::get('/health', function (\Illuminate\Http\Request $request) {
+    abort_unless($request->query('key') === 'warm123', 403);
+
+    return response()->json(['status' => 'ok']);
 });
 
 Route::post('/register', [AuthController::class, 'register']);
