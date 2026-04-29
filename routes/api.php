@@ -15,6 +15,13 @@ use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\BookingController;
 
 
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'time' => now()->toDateTimeString()
+    ]);
+});
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 

@@ -103,32 +103,30 @@ class AuthController extends Controller
             ]);
             
             $user = $request->user();
+            
+            if (!Hash::check($data['current_password'], $user->password)) {
+                return response()->json([
+                    'message' => 'Current password is incorrect.'
+                    ], 422);
+                    }
+                    
+                    if (Hash::check($data['password'], $user->password)) {
+                        return response()->json([
+                            'message' => 'New password must be different from current password.'
+                        ], 422);
+                        }
 
-    // Check current password
-    if (!Hash::check($data['current_password'], $user->password)) {
-        return response()->json([
-            'message' => 'Current password is incorrect.'
-        ], 422);
-    }
+                
+                $user->update([
+                    'password' => Hash::make($data['password']),
+                ]);
 
-    // Prevent same password reuse
-    if (Hash::check($data['password'], $user->password)) {
-        return response()->json([
-            'message' => 'New password must be different from current password.'
-        ], 422);
-    }
+                $user->tokens()->delete();
 
-    
-    $user->update([
-        'password' => Hash::make($data['password']),
-    ]);
-
-    $user->tokens()->delete();
-
-    return response()->json([
-        'message' => 'Password updated successfully.'
-    ]);
-}
+                return response()->json([
+                    'message' => 'Password updated successfully.'
+                ]);
+            }
 
     public function login(Request $request)
     {
