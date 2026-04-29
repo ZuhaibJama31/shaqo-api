@@ -17,7 +17,7 @@ use App\Http\Controllers\BookingController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/password/reset', [AuthController::class, 'password']);
+
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 Route::post('/send-code', [AuthController::class, 'sendCode']);
@@ -28,6 +28,7 @@ Route::get('/workers/{id}', [WorkerController::class, 'show']);
 // Authenticated user routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+     Route::put('/password/reset', [AuthController::class, 'password']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/workers/profile', [WorkerController::class, 'createOrUpdate']);
     

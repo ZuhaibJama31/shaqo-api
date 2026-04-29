@@ -98,22 +98,37 @@ class AuthController extends Controller
     public function password(Request $request)
     {
         $data = $request->validate([
-            'phone'                 => 'required|string|exists:users,phone',
-            'password'              => 'required|string|min:6|confirmed',
-        ]);
+            'current_password' => 'required|string',
+            'password'         => 'required|string|min:6|confirmed',
+            ]);
+            
+            $user = $request->user();
 
-        $user = User::where('phone', $data['phone'])->first();
-
-        $user->update([
-            'password' => Hash::make($data['password'])
-        ]);
-
-        $user->tokens()->delete();
-
+    // Check current password
+    if (!Hash::check($data['current_password'], $user->password)) {
         return response()->json([
-            'message' => 'Password reset successfully'
-        ]);
+            'message' => 'Current password is incorrect.'
+        ], 422);
     }
+
+    // Prevent same password reuse
+    if (Hash::check($data['password'], $user->password)) {
+        return response()->json([
+            'message' => 'New password must be different from current password.'
+        ], 422);
+    }
+
+    
+    $user->update([
+        'password' => Hash::make($data['password']),
+    ]);
+
+    $user->tokens()->delete();
+
+    return response()->json([
+        'message' => 'Password updated successfully.'
+    ]);
+}
 
     public function login(Request $request)
     {
