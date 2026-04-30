@@ -98,11 +98,18 @@ class AuthController extends Controller
         $cleanPhone = $this->formatPhone($data['phone']);
         $user = User::where('phone', $cleanPhone)->first();
 
-        if (!$user || !Hash::check($data['password'], $user->password)) {
+        if (!$user) {
             throw ValidationException::withMessages([
-                'phone' => ['Phone number or password is incorrect.'],
+                'phone' => ['Phone number is incorrect.'],
             ]);
+            if (!Hash::check($data['password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'phone' => ['Password is incorrect.'],
+            ]);
+            
+           }
         }
+        
 
         $user->tokens()->delete();
         $token = $user->createToken('app-token')->plainTextToken;
