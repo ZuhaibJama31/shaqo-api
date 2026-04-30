@@ -6,9 +6,9 @@ use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Admin\WorkerController as AdminWorkerController;
-use App\Http\Controllers\Client\BookingController as ClientBookingController;
-use App\Http\Controllers\Client\ClientController as ClientClientController;
-use App\Http\Controllers\Worker\WorkerController as WorkerWorkingController;
+use App\Http\Controllers\Client\ClientBookingController;
+use App\Http\Controllers\Client\ClientController as ClientProfileController;
+use App\Http\Controllers\Worker\WorkerController as WorkerProfileController;
 use App\Http\Controllers\Worker\BookingController as WorkerBookingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WorkerController;
@@ -64,7 +64,7 @@ Route::prefix('worker')
     ->group(function () {
         Route::get('/bookings', [WorkerBookingController::class, 'index']);
         Route::put('/bookings/{id}', [WorkerBookingController::class, 'update']);
-        Route::get('/working-hours', [WorkerWorkingController::class, 'index']);
+        Route::get('/working-hours', [WorkerProfileController::class, 'index']);
     });
 
 // Client routes
@@ -72,6 +72,13 @@ Route::prefix('client')
     ->middleware(['auth:sanctum', 'role:client'])
     ->name('client.')
     ->group(function () {
-        Route::get('/my-bookings', [ClientBookingController::class, 'index']);
-        Route::get('/profile', [ClientClientController::class, 'profile']);
+
+        
+        Route::get('/bookings', [ClientBookingController::class, 'index']);
+        Route::post('/bookings', [ClientBookingController::class, 'store']);
+        Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
+        Route::delete('/bookings/{id}', [ClientBookingController::class, 'destroy']);
+
+        // Profile
+        Route::get('/profile', [ClientProfileController::class, 'profile']);
     });

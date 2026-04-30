@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Rules\SomaliPhone;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,79 +12,70 @@ use Twilio\Rest\Client as TwilioClient;
 
 class AuthController extends Controller
 {
+    /**
+     * Helper to standardize phone numbers (removes +252 or 00252)
+     */
+    private function formatPhone($phone)
+    {
+        return preg_replace('/^(\+252|00252)/', '', $phone);
+    }
+
     public function sendCode(Request $request)
     {
-        $data = $request->validate([
-            'phone' => 'required|string'
+        $request->validate([
+            'phone' => ['required', 'string', new SomaliPhone]
         ]);
 
-        $twilio = new TwilioClient(
-            config('services.twilio.sid'),
-            config('services.twilio.token')
-        );
+        $twilio = new TwilioClient(config('services.twilio.sid'), config('services.twilio.token'));
 
-        $twilio->verify->v2->services(
-            config('services.twilio.verify_sid')
-        )->verifications
-        ->create($data['phone'], 'sms');
+        // Twilio usually requires the full E.164 format (+252...)
+        $fullPhone = '+' . preg_replace('/^\+?/', '', $request->phone);
 
-        return response()->json([
-            'message' => 'Verification code sent successfully'
-        ]);
+        $twilio->verify->v2->services(config('services.twilio.verify_sid'))
+            ->verifications
+            ->create($fullPhone, 'sms');
+
+        return response()->json(['message' => 'Verification code sent successfully']);
     }
 
     public function verifyCode(Request $request)
     {
-        $data = $request->validate([
-            'phone' => 'required|string',
+        $request->validate([
+            'phone' => ['required', 'string', new SomaliPhone],
             'code'  => 'required|string'
         ]);
 
-        $twilio = new TwilioClient(
-            config('services.twilio.sid'),
-            config('services.twilio.token')
-        );
+        $twilio = new TwilioClient(config('services.twilio.sid'), config('services.twilio.token'));
+        $fullPhone = '+' . preg_replace('/^\+?/', '', $request->phone);
 
-        $result = $twilio->verify->v2->services(
-            config('services.twilio.verify_sid')
-        )->verificationChecks
-        ->create([
-            'to'   => $data['phone'],
-            'code' => $data['code']
-        ]);
+        $result = $twilio->verify->v2->services(config('services.twilio.verify_sid'))
+            ->verificationChecks
+            ->create(['to' => $fullPhone, 'code' => $request->code]);
 
         if ($result->status !== 'approved') {
-            return response()->json([
-                'message' => 'Invalid verification code'
-            ], 400);
+            return response()->json(['message' => 'Invalid verification code'], 400);
         }
 
-        return response()->json([
-            'message' => 'Phone verified successfully'
-        ]);
+        return response()->json(['message' => 'Phone verified successfully']);
     }
 
     public function register(Request $request)
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:100',
-            'phone'       => 'required|string|unique:users,phone',
-            'password'    => 'required|string|min:6',
-            'city'        => 'nullable|string',
+            'name'     => 'required|string|max:100',
+            'phone'    => ['required', 'string', 'unique:users,phone', new SomaliPhone],
+            'password' => 'required|string|min:6',
+            'city'     => 'nullable|string', // Added to validation
         ]);
 
-        // Secure creation with a DB Transaction
         $user = DB::transaction(function () use ($data) {
-            
-            $user = User::create([
+            return User::create([
                 'name'     => $data['name'],
-                'phone'    => $data['phone'],
+                'phone'    => $this->formatPhone($data['phone']),
                 'password' => Hash::make($data['password']),
                 'role'     => 'client',
                 'city'     => $data['city'] ?? null,
             ]);
-
-            return $user;
         });
 
         $token = $user->createToken('app-token')->plainTextToken;
@@ -95,47 +87,16 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function password(Request $request)
-    {
-        $data = $request->validate([
-            'current_password' => 'required|string',
-            'password'         => 'required|string|min:6|confirmed',
-            ]);
-            
-            $user = $request->user();
-            
-            if (!Hash::check($data['current_password'], $user->password)) {
-                return response()->json([
-                    'message' => 'Current password is incorrect.'
-                    ], 422);
-                    }
-                    
-                    if (Hash::check($data['password'], $user->password)) {
-                        return response()->json([
-                            'message' => 'New password must be different from current password.'
-                        ], 422);
-                        }
-
-                
-                $user->update([
-                    'password' => Hash::make($data['password']),
-                ]);
-
-                $user->tokens()->delete();
-
-                return response()->json([
-                    'message' => 'Password updated successfully.'
-                ]);
-            }
-
     public function login(Request $request)
     {
         $data = $request->validate([
-            'phone'    => 'required|string',
+            'phone'    => ['required', 'string', new SomaliPhone],
             'password' => 'required|string',
         ]);
 
-        $user = User::where('phone', $data['phone'])->first();
+        // Clean input to match database format
+        $cleanPhone = $this->formatPhone($data['phone']);
+        $user = User::where('phone', $cleanPhone)->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -144,7 +105,6 @@ class AuthController extends Controller
         }
 
         $user->tokens()->delete();
-
         $token = $user->createToken('app-token')->plainTextToken;
 
         return response()->json([
@@ -154,21 +114,39 @@ class AuthController extends Controller
         ]);
     }
 
+    public function password(Request $request)
+    {
+        $data = $request->validate([
+            'current_password' => 'required|string',
+            'password'         => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($data['current_password'], $user->password)) {
+            return response()->json(['message' => 'Current password is incorrect.'], 422);
+        }
+
+        if (Hash::check($data['password'], $user->password)) {
+            return response()->json(['message' => 'New password must be different.'], 422);
+        }
+
+        $user->update(['password' => Hash::make($data['password'])]);
+        $user->tokens()->delete();
+
+        return response()->json(['message' => 'Password updated successfully.']);
+    }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'message' => 'Logged out successfully'
-        ]);
+        return response()->json(['message' => 'Logged out successfully']);
     }
 
     public function me(Request $request)
     {
         return response()->json(
-            $request->user()->load('worker.category','client')
-            
-
+            $request->user()->load('worker.category', 'client')
         );
     }
 }
