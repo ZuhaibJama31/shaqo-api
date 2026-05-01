@@ -14,7 +14,6 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\BookingController;
 
-
 Route::get('/health', function (\Illuminate\Http\Request $request) {
     abort_unless($request->query('key') === 'warm123', 403);
     DB::select('SELECT 1');
@@ -22,34 +21,40 @@ Route::get('/health', function (\Illuminate\Http\Request $request) {
     return response()->json(['status' => 'ok']);
 });
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
 
+// 🔐 FIREBASE AUTH (ONLY AUTH ENDPOINT)
+Route::post('/auth/firebase', [AuthController::class, 'firebaseAuth']);
+
+
+// Public routes
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
-Route::post('/send-code', [AuthController::class, 'sendCode']);
-Route::post('/verify-code', [AuthController::class, 'verifyCode']);
+
 Route::get('/workers', [WorkerController::class, 'index']);
 Route::get('/workers/{id}', [WorkerController::class, 'show']);
 
-// Authenticated user routes
+
+// 🔒 AUTHENTICATED ROUTES (SANCTUM)
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::post('/logout', [AuthController::class, 'logout']);
-     Route::put('/password/reset', [AuthController::class, 'password']);
     Route::get('/me', [AuthController::class, 'me']);
+
+    Route::put('/password/reset', [AuthController::class, 'password']);
+
     Route::post('/workers/profile', [WorkerController::class, 'createOrUpdate']);
-    
-    // Client booking routes
+
+    // Bookings (shared base access)
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::put('/bookings/{id}', [BookingController::class, 'update']);
 });
 
-// Admin routes
+
+// 👑 ADMIN
 Route::prefix('admin')
     ->middleware(['auth:sanctum', 'admin'])
-    ->name('admin.')
     ->group(function () {
         Route::apiResource('workers', AdminWorkerController::class);
         Route::apiResource('clients', AdminClientController::class);
@@ -57,28 +62,26 @@ Route::prefix('admin')
         Route::apiResource('bookings', AdminBookingController::class);
     });
 
-// Worker routes
+
+// 🧑 WORKER
 Route::prefix('worker')
     ->middleware(['auth:sanctum', 'role:worker'])
-    ->name('worker.')
     ->group(function () {
         Route::get('/bookings', [WorkerBookingController::class, 'index']);
         Route::put('/bookings/{id}', [WorkerBookingController::class, 'update']);
         Route::get('/working-hours', [WorkerProfileController::class, 'index']);
     });
 
-// Client routes
+
+// 👤 CLIENT
 Route::prefix('client')
     ->middleware(['auth:sanctum', 'role:client'])
-    ->name('client.')
     ->group(function () {
 
-        
         Route::get('/bookings', [ClientBookingController::class, 'index']);
         Route::post('/bookings', [ClientBookingController::class, 'store']);
         Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
         Route::delete('/bookings/{id}', [ClientBookingController::class, 'destroy']);
 
-        // Profile
         Route::get('/profile', [ClientProfileController::class, 'profile']);
     });
