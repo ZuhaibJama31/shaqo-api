@@ -20,6 +20,7 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'role',
         'city',
+        'firebase_uid'
     ];
 
     protected static function booted()
