@@ -22,29 +22,38 @@ Route::get('/health', function (\Illuminate\Http\Request $request) {
 });
 
 
-// 🔐 FIREBASE AUTH (ONLY AUTH ENDPOINT)
-Route::post('/auth/firebase', [AuthController::class, 'firebaseAuth']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/verify-login', [AuthController::class, 'verifyLogin']);
 
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/verify-login', [AuthController::class, 'verifyLogin']);
 
-// Public routes
+Route::post('/request-password-reset', [AuthController::class, 'requestPasswordReset']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+/*
+|--------------------------------------------------------------------------
+| PUBLIC ROUTES
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
 Route::get('/workers', [WorkerController::class, 'index']);
 Route::get('/workers/{id}', [WorkerController::class, 'show']);
 
-
 // 🔒 AUTHENTICATED ROUTES (SANCTUM)
 Route::middleware('auth:sanctum')->group(function () {
-
-    Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-
-    Route::put('/password/reset', [AuthController::class, 'password']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+    Route::post('/update-profile', [AuthController::class, 'updateProfile']);
 
     Route::post('/workers/profile', [WorkerController::class, 'createOrUpdate']);
 
-    // Bookings (shared base access)
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);

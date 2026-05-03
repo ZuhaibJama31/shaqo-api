@@ -5,72 +5,113 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Kreait\Firebase\Auth as FirebaseAuth;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    private function formatPhone($phone)
+    private function normalizePhone($phone)
     {
-        return preg_replace('/^(\+252|00252)/', '', $phone);
+        $phone = trim($phone);
+
+        // Somalia format fix: 0XXXXXXXXX → +252XXXXXXXXX
+        if (preg_match('/^0/', $phone)) {
+            return '+252' . substr($phone, 1);
+        }
+
+        return $phone;
     }
 
-    
-    public function firebaseAuth(Request $request, FirebaseAuth $firebaseAuth)
+    /**
+     * REGISTER USER
+     */
+    public function register(Request $request)
     {
         $data = $request->validate([
-            'idToken' => 'required|string',
-            'name'    => 'nullable|string|max:255',
-            'city'    => 'nullable|string|max:255',
+            'phone'    => 'required|string|unique:users,phone',
+            'password' => 'required|string|min:6',
+            'name'     => 'required|string',
+            'city'     => 'nullable|string',
+            'role'     => 'required|in:client,worker'
         ]);
 
-        try {
-            // ✅ Verify Firebase token
-            $verifiedIdToken = $firebaseAuth->verifyIdToken($data['idToken']);
-            $uid = $verifiedIdToken->claims()->get('sub');
+        $phone = $this->normalizePhone($data['phone']);
 
-            // ✅ Get Firebase user
-            $firebaseUser = $firebaseAuth->getUser($uid);
-            $phone = $firebaseUser->phoneNumber;
+        $user = User::create([
+            'phone'    => $phone,
+            'name'     => $data['name'],
+            'city'     => $data['city'] ?? null,
+            'role'     => $data['role'],
+            'password' => Hash::make($data['password']),
+        ]);
 
-            if (!$phone) {
-                return response()->json([
-                    'message' => 'Phone number not found in Firebase'
-                ], 400);
-            }
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-            $phone = $this->formatPhone($phone);
-
-            // ✅ Find or create user
-            $user = User::where('phone', $phone)->first();
-
-            if (!$user) {
-                $user = User::create([
-                    'name'         => $data['name'] ?? 'User',
-                    'phone'        => $phone,
-                    'password'     => Hash::make(str()->random(16)),
-                    'role'         => 'client',
-                    'city'         => $data['city'] ?? null,
-                    'firebase_uid' => $uid,
-                ]);
-            }
-
-            // ✅ Generate token
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return response()->json([
-                'message' => 'Authenticated successfully',
-                'token'   => $token,
-                'user'    => $user,
-            ]);
-
-        } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Invalid Firebase token',
-                'error'   => $e->getMessage(),
-            ], 401);
-        }
+        return response()->json([
+            'message' => 'User registered successfully',
+            'token'   => $token,
+            'user'    => $user
+        ], 201);
     }
 
+    /**
+     * LOGIN WITH PASSWORD
+     */
+    public function login(Request $request)
+    {
+        $data = $request->validate([
+            'phone'    => 'required|string',
+            'password' => 'required|string'
+        ]);
+
+        $phone = $this->normalizePhone($data['phone']);
+
+        $user = User::where('phone', $phone)->first();
+
+        if (!$user || !Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'phone' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'token'   => $token,
+            'user'    => $user
+        ]);
+    }
+
+    /**
+     * PASSWORD RESET — sends a new password directly (no OTP)
+     */
+    public function resetPassword(Request $request)
+    {
+        $data = $request->validate([
+            'phone'    => 'required|string',
+            'password' => 'required|string|min:6|confirmed'
+        ]);
+
+        $phone = $this->normalizePhone($data['phone']);
+
+        $user = User::where('phone', $phone)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user->update([
+            'password' => Hash::make($data['password'])
+        ]);
+
+        return response()->json([
+            'message' => 'Password reset successful'
+        ]);
+    }
+
+    /**
+     * GET CURRENT USER
+     */
     public function me(Request $request)
     {
         return response()->json(
@@ -78,7 +119,9 @@ class AuthController extends Controller
         );
     }
 
-    
+    /**
+     * LOGOUT
+     */
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -88,35 +131,18 @@ class AuthController extends Controller
         ]);
     }
 
-    
-    public function logoutAll(Request $request)
-    {
-        $request->user()->tokens()->delete();
-
-        return response()->json([
-            'message' => 'Logged out from all devices'
-        ]);
-    }
-
-    
+    /**
+     * UPDATE PROFILE
+     */
     public function updateProfile(Request $request)
     {
         $data = $request->validate([
-            'name' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:255',
+            'name' => 'nullable|string',
+            'city' => 'nullable|string',
         ]);
 
         $user = $request->user();
-
-        if (isset($data['name'])) {
-            $user->name = $data['name'];
-        }
-
-        if (isset($data['city'])) {
-            $user->city = $data['city'];
-        }
-
-        $user->save();
+        $user->update(array_filter($data));
 
         return response()->json([
             'message' => 'Profile updated successfully',

@@ -18,6 +18,7 @@ class Worker extends Model
         'is_available',
         'rating',
         'total_jobs',
+        'profile_picture',
     ];
 
     protected $casts = [
