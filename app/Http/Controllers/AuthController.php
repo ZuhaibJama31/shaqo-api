@@ -82,9 +82,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * PASSWORD RESET — sends a new password directly (no OTP)
-     */
+    
     public function resetPassword(Request $request)
     {
         $data = $request->validate([

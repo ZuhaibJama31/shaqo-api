@@ -21,22 +21,14 @@ Route::get('/health', function (\Illuminate\Http\Request $request) {
     return response()->json(['status' => 'ok']);
 });
 
+
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES
 |--------------------------------------------------------------------------
 */
-
-
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-
-
-
-Route::post('/passsword-reset', [AuthController::class, 'resetPassword']);
-
-
-
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
@@ -46,10 +38,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+    Route::post('/passsword-reset', [AuthController::class, 'resetPassword']);
     Route::post('/update-profile', [AuthController::class, 'updateProfile']);
 
+    Route::get('/workers', [WorkerController::class, 'index']);
+    
     Route::post('/workers/profile', [WorkerController::class, 'createOrUpdate']);
-
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
