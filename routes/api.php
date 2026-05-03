@@ -21,29 +21,25 @@ Route::get('/health', function (\Illuminate\Http\Request $request) {
     return response()->json(['status' => 'ok']);
 });
 
-
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/verify-login', [AuthController::class, 'verifyLogin']);
-
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/verify-login', [AuthController::class, 'verifyLogin']);
-
-Route::post('/request-password-reset', [AuthController::class, 'requestPasswordReset']);
-Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES
 |--------------------------------------------------------------------------
 */
 
+
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+
+
+Route::post('/passsword-reset', [AuthController::class, 'resetPassword']);
+
+
+
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-Route::get('/workers', [WorkerController::class, 'index']);
-Route::get('/workers/{id}', [WorkerController::class, 'show']);
 
 // 🔒 AUTHENTICATED ROUTES (SANCTUM)
 Route::middleware('auth:sanctum')->group(function () {
