@@ -1,49 +1,62 @@
-<?php 
-
+<?php
 
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Client;
-
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class ClientController extends Controller
 {
+    // GET /admin/clients
     public function index()
     {
-        return response()->json(Client::latest()->get());
+        return response()->json(
+            User::where('role', 'client')
+                ->latest()
+                ->get()
+        );
     }
 
+    // POST /admin/clients
     public function store(Request $request)
     {
         $data = $request->validate([
-            'user_id'  => 'required|exists:users,id',
             'name'     => 'required|string|max:255',
-            'phone'    => 'required|string|unique:clients,phone',
-            'city'     => 'required|string|max:255',
-            'address'  => 'nullable|string',
+            'phone'    => 'required|string|unique:users,phone',
+            'city'     => 'nullable|string|max:255',
+            'password' => 'nullable|string|min:6',
         ]);
 
-        $client = Client::create($data);
+        $client = User::create([
+            'name'     => $data['name'],
+            'phone'    => $data['phone'],
+            'city'     => $data['city'] ?? null,
+            'password' => Hash::make($data['password'] ?? '123456'),
+            'role'     => 'client',
+        ]);
 
         return response()->json($client, 201);
     }
 
+    // GET /admin/clients/{id}
     public function show(string $id)
     {
-        return response()->json(Client::findOrFail($id));
+        return response()->json(
+            User::where('role', 'client')->findOrFail($id)
+        );
     }
 
+    // PUT /admin/clients/{id}
     public function update(Request $request, string $id)
     {
-        $client = Client::findOrFail($id);
+        $client = User::where('role', 'client')->findOrFail($id);
 
         $data = $request->validate([
-            'name'    => 'sometimes|string|max:255',
-            'phone'   => 'sometimes|string|unique:clients,phone,' . $client->id,
-            'city'    => 'sometimes|string|max:255',
-            'address' => 'nullable|string',
+            'name'  => 'sometimes|string|max:255',
+            'phone' => 'sometimes|string|unique:users,phone,' . $client->id,
+            'city'  => 'sometimes|string|max:255',
         ]);
 
         $client->update($data);
@@ -51,9 +64,11 @@ class ClientController extends Controller
         return response()->json($client);
     }
 
+    // DELETE /admin/clients/{id}
     public function destroy(string $id)
     {
-        Client::findOrFail($id)->delete();
+        $client = User::where('role', 'client')->findOrFail($id);
+        $client->delete();
 
         return response()->json([
             'message' => 'Client deleted successfully'
