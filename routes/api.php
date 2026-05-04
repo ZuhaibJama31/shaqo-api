@@ -21,35 +21,43 @@ Route::get('/health', function (\Illuminate\Http\Request $request) {
     return response()->json(['status' => 'ok']);
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES
 |--------------------------------------------------------------------------
 */
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-
-// 🔒 AUTHENTICATED ROUTES (SANCTUM)
+/*
+|--------------------------------------------------------------------------
+| AUTHENTICATED ROUTES (SANCTUM)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Auth
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
-    Route::post('/passsword-reset', [AuthController::class, 'resetPassword']);
-    Route::post('/update-profile', [AuthController::class, 'updateProfile']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
 
+    // Password management
+    Route::put('/password/change', [AuthController::class, 'changePassword']);
+
+    // Workers
     Route::get('/workers', [WorkerController::class, 'index']);
-    
     Route::post('/workers/profile', [WorkerController::class, 'createOrUpdate']);
+
+    // Bookings
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::put('/bookings/{id}', [BookingController::class, 'update']);
 });
-
 
 // 👑 ADMIN
 Route::prefix('admin')

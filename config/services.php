@@ -40,5 +40,8 @@ return [
     'token' => env('TWILIO_TOKEN'),
     'verify_sid' => env('TWILIO_VERIFY_SID')
 ],
+'prelude' => [
+    'key' => env('PRELUDE_API_KEY'),
+],
 
 ];

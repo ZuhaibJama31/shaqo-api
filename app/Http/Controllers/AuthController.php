@@ -9,142 +9,140 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    private function normalizePhone($phone)
-    {
-        $phone = trim($phone);
-
-        // Somalia format fix: 0XXXXXXXXX → +252XXXXXXXXX
-        if (preg_match('/^0/', $phone)) {
-            return '+252' . substr($phone, 1);
-        }
-
-        return $phone;
-    }
-
-    /**
-     * REGISTER USER
-     */
+    /*
+    | =========================
+    | REGISTER (PASSWORD ONLY)
+    | =========================
+    */
     public function register(Request $request)
     {
         $data = $request->validate([
-            'phone'    => 'required|string|unique:users,phone',
-            'password' => 'required|string|min:6',
-            'name'     => 'required|string',
-            'city'     => 'nullable|string',
-            'role'     => 'required|in:client,worker'
+            'phone' => 'required|unique:users,phone',
+            'name'  => 'required',
+            'password' => 'required|min:6'
         ]);
 
-        $phone = $this->normalizePhone($data['phone']);
-
         $user = User::create([
-            'phone'    => $phone,
-            'name'     => $data['name'],
-            'city'     => $data['city'] ?? null,
-            'role'     => $data['role'],
+            'phone' => $data['phone'],
+            'name'  => $data['name'],
             'password' => Hash::make($data['password']),
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('auth')->plainTextToken;
 
         return response()->json([
-            'message' => 'User registered successfully',
-            'token'   => $token,
-            'user'    => $user
-        ], 201);
+            'message' => 'Account created successfully',
+            'token' => $token,
+            'user' => $user
+        ]);
     }
 
-    /**
-     * LOGIN WITH PASSWORD
-     */
+    /*
+    | =========================
+    | LOGIN (PASSWORD ONLY)
+    | =========================
+    */
     public function login(Request $request)
     {
         $data = $request->validate([
-            'phone'    => 'required|string',
-            'password' => 'required|string'
+            'phone' => 'required',
+            'password' => 'required'
         ]);
 
-        $phone = $this->normalizePhone($data['phone']);
-
-        $user = User::where('phone', $phone)->first();
+        $user = User::where('phone', $data['phone'])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'phone' => ['The provided credentials are incorrect.'],
+                'phone' => 'Invalid phone or password'
             ]);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return response()->json([
-            'message' => 'Login successful',
-            'token'   => $token,
-            'user'    => $user
+            'token' => $user->createToken('auth')->plainTextToken,
+            'user' => $user
         ]);
     }
 
-    
-    public function resetPassword(Request $request)
+    /*
+    | =========================
+    | USER PROFILE
+    | =========================
+    */
+    public function me(Request $request)
+    {
+        return response()->json($request->user());
+    }
+
+    /*
+    | =========================
+    | CHANGE PASSWORD
+    | =========================
+    */
+    public function changePassword(Request $request)
     {
         $data = $request->validate([
-            'phone'    => 'required|string',
-            'password' => 'required|string|min:6|confirmed'
+            'current_password' => 'required',
+            'new_password' => 'required|min:6'
         ]);
 
-        $phone = $this->normalizePhone($data['phone']);
+        $user = $request->user();
 
-        $user = User::where('phone', $phone)->first();
-
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+        if (!Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => 'Current password is incorrect'
+            ]);
         }
 
         $user->update([
-            'password' => Hash::make($data['password'])
+            'password' => Hash::make($data['new_password'])
         ]);
 
         return response()->json([
-            'message' => 'Password reset successful'
+            'message' => 'Password updated successfully'
         ]);
     }
 
-    /**
-     * GET CURRENT USER
-     */
-    public function me(Request $request)
-    {
-        return response()->json(
-            $request->user()->load('worker.category', 'client')
-        );
-    }
-
-    /**
-     * LOGOUT
-     */
+    /*
+    | =========================
+    | LOGOUT
+    | =========================
+    */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->tokens()->delete();
 
         return response()->json([
             'message' => 'Logged out successfully'
         ]);
     }
 
-    /**
-     * UPDATE PROFILE
-     */
-    public function updateProfile(Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'nullable|string',
-            'city' => 'nullable|string',
-        ]);
+    /*
+| =========================
+| UPDATE USER PROFILE
+| =========================
+*/
+public function updateProfile(Request $request)
+{
+    $user = $request->user();
 
-        $user = $request->user();
-        $user->update(array_filter($data));
+    $data = $request->validate([
+        'name'  => 'sometimes|required|string',
+        'phone' => 'sometimes|required|unique:users,phone,' . $user->id,
+    ]);
 
-        return response()->json([
-            'message' => 'Profile updated successfully',
-            'user'    => $user
-        ]);
+    if (isset($data['name'])) {
+        $user->name = $data['name'];
     }
+
+    if (isset($data['phone'])) {
+        $user->phone = $data['phone'];
+    }
+
+    $user->save();
+
+    return response()->json([
+        'message' => 'Profile updated successfully',
+        'user' => $user
+    ]);
+}
 }
