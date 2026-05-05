@@ -64,7 +64,7 @@ class WorkerController extends Controller
             // Worker fields
             'category_id'      => 'required|exists:categories,id',
             'bio'              => 'nullable|string|max:500',
-            'hourly_rate'      => 'required|numeric|min:0',
+            'hourly_rate'      => 'nullable|numeric|min:0',
             'experience_years' => 'nullable|string|max:20',
             'is_available'     => 'boolean',
 
