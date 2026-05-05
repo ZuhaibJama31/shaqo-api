@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\v1\Admin;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\v1\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
-class ClientController extends Controller
+class AdminClientController extends Controller
 {
     // GET /admin/clients
     public function index()

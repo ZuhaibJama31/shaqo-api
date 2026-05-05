@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\v1;
 
-use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Api\v1\Controller;
 use App\Models\Category;
 
 class CategoryController extends Controller

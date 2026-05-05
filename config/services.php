@@ -43,5 +43,8 @@ return [
 'prelude' => [
     'key' => env('PRELUDE_API_KEY'),
 ],
+'fcm' => [
+    'key' => env('FCM_SERVER_KEY'),
+],
 
 ];

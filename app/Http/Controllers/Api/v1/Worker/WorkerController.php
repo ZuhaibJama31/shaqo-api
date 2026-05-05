@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Worker;
+namespace App\Http\Controllers\Api\v1\Worker;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\v1\Controller;
 use App\Models\Worker;
 use Illuminate\Http\Request;
 

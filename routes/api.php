@@ -1,94 +1,73 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Admin\BookingController as AdminBookingController; 
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Admin\ClientController as AdminClientController;
-use App\Http\Controllers\Admin\WorkerController as AdminWorkerController;
-use App\Http\Controllers\Client\ClientBookingController;
-use App\Http\Controllers\Client\ClientController as ClientProfileController;
-use App\Http\Controllers\Worker\WorkerController as WorkerProfileController;
-use App\Http\Controllers\Worker\BookingController as WorkerBookingController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\WorkerController;
-use App\Http\Controllers\BookingController;
+use Illuminate\Support\Facades\DB;
+
+use App\Http\Controllers\Api\v1\Auth\AuthController;
+use App\Http\Controllers\Api\v1\Auth\DeviceTokenController;
+use App\Http\Controllers\Api\v1\Admin\AdminBookingController;
+use App\Http\Controllers\Api\v1\Admin\AdminCategoryController;
+use App\Http\Controllers\Api\v1\Admin\AdminClientController;
+use App\Http\Controllers\Api\v1\Admin\AdminWorkerController;
+use App\Http\Controllers\Api\v1\Client\ClientBookingController;
+use App\Http\Controllers\Api\v1\Client\ClientController;
+use App\Http\Controllers\Api\v1\Worker\WorkerBookingController;
+use App\Http\Controllers\Api\v1\Worker\WorkerController;
+use App\Http\Controllers\Api\v1\CategoryController;
+
 
 Route::get('/health', function (\Illuminate\Http\Request $request) {
     abort_unless($request->query('key') === 'warm123', 403);
     DB::select('SELECT 1');
-
     return response()->json(['status' => 'ok']);
 });
 
 /*
-|--------------------------------------------------------------------------
-| PUBLIC ROUTES
-|--------------------------------------------------------------------------
-*/
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-
-Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/categories/{id}', [CategoryController::class, 'show']);
-
-/*
 |--------------------------------------------------------------------------
-| AUTHENTICATED ROUTES (SANCTUM)
+| API V1 ROUTES
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->group(function () {
+Route::prefix('v1')->group(function () {
 
-    // Auth
-    Route::get('/me', [AuthController::class, 'me']);
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    // PUBLIC ROUTES
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-    // Password management
-    Route::put('/password/change', [AuthController::class, 'changePassword']);
+    // AUTHENTICATED ROUTES
+    Route::middleware('auth:sanctum')->group(function () {
+        
+        // Auth / Profile
+        Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::put('/profile', [AuthController::class, 'updateProfile']);
+        Route::put('/password/change', [AuthController::class, 'changePassword']);
 
-    // Workers
-    Route::get('/workers', [WorkerController::class, 'index']);
-    Route::post('/workers/profile', [WorkerController::class, 'createOrUpdate']);
+        // 👑 ADMIN
+        Route::prefix('admin')->middleware('admin')->group(function () {
+            Route::apiResource('workers', AdminWorkerController::class);
+            Route::apiResource('clients', AdminClientController::class);
+            Route::apiResource('categories', AdminCategoryController::class);
+            Route::apiResource('bookings', AdminBookingController::class);
+            Route::post('/save-token', [DeviceTokenController::class, 'store']);
+        });
 
-    // Bookings
-    Route::get('/bookings', [BookingController::class, 'index']);
-    Route::post('/bookings', [BookingController::class, 'store']);
-    Route::get('/bookings/{id}', [BookingController::class, 'show']);
-    Route::put('/bookings/{id}', [BookingController::class, 'update']);
+        // 🧑 WORKER
+        Route::prefix('worker')->middleware('role:worker')->group(function () {
+            Route::get('/bookings', [WorkerBookingController::class, 'index']);
+            Route::put('/bookings/{id}', [WorkerBookingController::class, 'update']);
+            Route::get('/profile', [WorkerController::class, 'show']); 
+        });
+
+        // 👤 CLIENT
+        Route::prefix('client')->middleware('role:client')->group(function () {
+            Route::get('/bookings', [ClientBookingController::class, 'index']);
+            Route::post('/bookings', [ClientBookingController::class, 'store']);
+            Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
+            Route::delete('/bookings/{id}', [ClientBookingController::class, 'destroy']);
+            Route::get('/profile', [ClientController::class, 'show']);
+        });
+    });
 });
-
-// 👑 ADMIN
-Route::prefix('admin')
-    ->middleware(['auth:sanctum', 'admin'])
-    ->group(function () {
-        Route::apiResource('workers', AdminWorkerController::class);
-        Route::apiResource('clients', AdminClientController::class);
-        Route::apiResource('categories', AdminCategoryController::class);
-        Route::apiResource('bookings', AdminBookingController::class);
-    });
-
-
-// 🧑 WORKER
-Route::prefix('worker')
-    ->middleware(['auth:sanctum', 'role:worker'])
-    ->group(function () {
-        Route::get('/bookings', [WorkerBookingController::class, 'index']);
-        Route::put('/bookings/{id}', [WorkerBookingController::class, 'update']);
-        Route::get('/working-hours', [WorkerProfileController::class, 'index']);
-    });
-
-
-// 👤 CLIENT
-Route::prefix('client')
-    ->middleware(['auth:sanctum', 'role:client'])
-    ->group(function () {
-
-        Route::get('/bookings', [ClientBookingController::class, 'index']);
-        Route::post('/bookings', [ClientBookingController::class, 'store']);
-        Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
-        Route::delete('/bookings/{id}', [ClientBookingController::class, 'destroy']);
-
-        Route::get('/profile', [ClientProfileController::class, 'profile']);
-    });

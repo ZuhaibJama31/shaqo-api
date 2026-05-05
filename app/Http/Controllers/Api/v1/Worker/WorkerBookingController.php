@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Worker;
+namespace App\Http\Controllers\Api\v1\Worker;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\v1\Controller;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 
-class BookingController extends Controller
+class WorkerBookingController extends Controller
 {
     /**
      * List bookings for the current user

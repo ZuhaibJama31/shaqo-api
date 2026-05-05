@@ -1,14 +1,16 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\v1\Admin;
+
+use App\Http\Controllers\Api\v1\Controller;
 
 use App\Models\User;
 use App\Models\Worker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Controllers\Controller;
 
-class WorkerController extends Controller
+
+class AdminWorkerController extends Controller
 {
     /**
      * List all workers (filter by category_id and/or city)
