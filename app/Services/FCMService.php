@@ -1,9 +1,10 @@
-<?php 
+<?php
 
 namespace App\Services;
 
 use Google\Client;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class FCMService
 {
@@ -15,32 +16,67 @@ class FCMService
 
         $token = $client->fetchAccessTokenWithAssertion();
 
-        return $token['access_token'];
+        return $token['access_token'] ?? null;
     }
 
     public function send($tokens, $title, $body, $data = [])
     {
-        $accessToken = $this->getAccessToken();
+        try {
+            $accessToken = $this->getAccessToken();
 
-        $projectId = json_decode(
-            file_get_contents(storage_path('app/firebase.json')),
-            true
-        )['project_id'];
+            if (!$accessToken) {
+                Log::error('FCM: Failed to get access token');
+                return false;
+            }
 
-        foreach ($tokens as $token) {
-            Http::withHeaders([
-                'Authorization' => 'Bearer ' . $accessToken,
-                'Content-Type' => 'application/json',
-            ])->post("https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send", [
-                'message' => [
-                    'token' => $token,
-                    'notification' => [
-                        'title' => $title,
-                        'body' => $body,
-                    ],
-                    'data' => $data,
-                ]
+            $firebaseConfig = json_decode(
+                file_get_contents(storage_path('app/firebase.json')),
+                true
+            );
+
+            $projectId = $firebaseConfig['project_id'] ?? null;
+
+            if (!$projectId) {
+                Log::error('FCM: Missing project_id');
+                return false;
+            }
+
+            foreach ($tokens as $token) {
+
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Content-Type' => 'application/json',
+                ])->post(
+                    "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send",
+                    [
+                        'message' => [
+                            'token' => $token,
+                            'notification' => [
+                                'title' => $title,
+                                'body' => $body,
+                            ],
+                            'data' => $data,
+                        ]
+                    ]
+                );
+
+                // 🔥 IMPORTANT: log response
+                if (!$response->successful()) {
+                    Log::error('FCM Send Failed', [
+                        'token' => $token,
+                        'response' => $response->body(),
+                    ]);
+                }
+            }
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('FCM Exception', [
+                'message' => $e->getMessage(),
             ]);
+
+            return false;
         }
     }
 }
