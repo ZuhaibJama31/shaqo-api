@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Api\v1\Auth\AuthController;
 use App\Http\Controllers\Api\v1\Auth\DeviceTokenController;
 use App\Http\Controllers\Api\v1\Admin\AdminBookingController;
+use App\Http\Controllers\Api\v1\Admin\NotificationController;
 use App\Http\Controllers\Api\v1\Admin\AdminCategoryController;
 use App\Http\Controllers\Api\v1\Admin\AdminClientController;
 use App\Http\Controllers\Api\v1\Admin\AdminWorkerController;
@@ -44,9 +45,14 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::put('/profile', [AuthController::class, 'updateProfile']);
         Route::put('/password/change', [AuthController::class, 'changePassword']);
-
+        
         // 👑 ADMIN
         Route::prefix('admin')->middleware('admin')->group(function () {
+
+        
+         Route::get('/admin/notifications', [NotificationController::class, 'index']);
+         Route::post('/admin/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
             Route::apiResource('workers', AdminWorkerController::class);
             Route::apiResource('clients', AdminClientController::class);
             Route::apiResource('categories', AdminCategoryController::class);

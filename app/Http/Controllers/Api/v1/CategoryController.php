@@ -18,4 +18,4 @@ class CategoryController extends Controller
         return response()->json(Category::find($id));
 
     }
-}
+} 
