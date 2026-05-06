@@ -36,6 +36,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
+    
 
     // AUTHENTICATED ROUTES
     Route::middleware('auth:sanctum')->group(function () {
@@ -46,18 +47,20 @@ Route::prefix('v1')->group(function () {
         Route::put('/profile', [AuthController::class, 'updateProfile']);
         Route::put('/password/change', [AuthController::class, 'changePassword']);
         
+         Route::post('/save-token', [DeviceTokenController::class, 'store']);
+        
         // 👑 ADMIN
         Route::prefix('admin')->middleware('admin')->group(function () {
 
         
-         Route::get('/admin/notifications', [NotificationController::class, 'index']);
-         Route::post('/admin/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+         Route::get('notifications', [NotificationController::class, 'index']);
+         Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
             Route::apiResource('workers', AdminWorkerController::class);
             Route::apiResource('clients', AdminClientController::class);
             Route::apiResource('categories', AdminCategoryController::class);
             Route::apiResource('bookings', AdminBookingController::class);
-            Route::post('/save-token', [DeviceTokenController::class, 'store']);
+            
         });
 
         // 🧑 WORKER
