@@ -48,13 +48,13 @@ Route::prefix('v1')->group(function () {
         Route::put('/password/change', [AuthController::class, 'changePassword']);
         
          Route::post('/save-token', [DeviceTokenController::class, 'store']);
+
+         Route::apiResource('workers', WorkerController::class);
         
         // 👑 ADMIN
         Route::prefix('admin')->middleware('admin')->group(function () {
-
-        
-         Route::get('notifications', [NotificationController::class, 'index']);
-         Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+            Route::get('notifications', [NotificationController::class, 'index']);
+            Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
             Route::apiResource('workers', AdminWorkerController::class);
             Route::apiResource('clients', AdminClientController::class);
@@ -76,6 +76,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/bookings', [ClientBookingController::class, 'store']);
             Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
             Route::delete('/bookings/{id}', [ClientBookingController::class, 'destroy']);
+            Route::get('/workers/', [ClientBookingController::class, 'destroy']);
+            
+
             Route::get('/profile', [ClientController::class, 'show']);
         });
     });
