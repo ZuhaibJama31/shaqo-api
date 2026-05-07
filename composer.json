@@ -13,6 +13,7 @@
         "filament/filament": "^5.5",
         "google/apiclient": "^2.19",
         "kreait/laravel-firebase": "7.1",
+        "laravel-notification-channels/expo": "^2.2",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",

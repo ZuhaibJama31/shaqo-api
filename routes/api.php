@@ -47,7 +47,12 @@ Route::prefix('v1')->group(function () {
         Route::put('/profile', [AuthController::class, 'updateProfile']);
         Route::put('/password/reset', [AuthController::class, 'passwordReset']);
         
-         Route::post('/save-token', [DeviceTokenController::class, 'store']);
+        Route::post('/save-token', function (Request $request) {
+            $user = $request->user();
+            $user->expo_token = $request->token;
+            $user->save();
+            return response()->json(['message' => 'Token saved']);
+            });
 
          Route::apiResource('workers', WorkerController::class);
         

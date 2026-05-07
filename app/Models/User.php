@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use NotificationChannels\Expo\ExpoPushToken;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -20,8 +21,7 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'role',
-        'city',
-        'firebase_uid'
+        'city'
     ];
 
     protected static function booted()
@@ -46,6 +46,8 @@ class User extends Authenticatable implements FilamentUser
     });
 }
 
+
+   
     protected $hidden = [
         'password',
         'remember_token',
@@ -54,8 +56,13 @@ class User extends Authenticatable implements FilamentUser
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'expo_token' => ExpoPushToken::class,
     ];
 
+     public function routeNotificationForExpo()
+    {
+        return $this->expo_token;
+    }
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->role === 'admin';
