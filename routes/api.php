@@ -77,7 +77,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
             Route::put('/bookings/{id}', [ClientBookingController::class, 'update']); 
             Route::delete('/bookings/{id}', [ClientBookingController::class, 'destroy']);
-            Route::get('/workers/', [ClientBookingController::class, 'destroy']);
+            //Route::get('/workers/', [ClientBookingController::class, 'destroy']);
             
 
             Route::get('/profile', [ClientController::class, 'show']);

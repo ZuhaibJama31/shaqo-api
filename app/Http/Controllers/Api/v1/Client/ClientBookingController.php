@@ -58,7 +58,7 @@ class ClientBookingController extends Controller
             'status'       => 'pending',
         ]);
 
-        // 2. GET ADMINS (Eager load deviceTokens for performance)
+        /* 2. GET ADMINS (Eager load deviceTokens for performance)
         $admins = User::where('role', 'admin')->with('deviceTokens')->get();
 
         // 3. Notify Admins
@@ -79,6 +79,7 @@ class ClientBookingController extends Controller
                 );
             }
         }
+            */
 
         return response()->json([
             'message' => 'Booking created successfully',
