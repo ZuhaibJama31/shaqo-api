@@ -71,7 +71,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // 👤 CLIENT
-        Route::prefix('client')->middleware('role:client')->group(function () {
+        Route::prefix('client')->middleware('client')->group(function () {
             Route::get('/bookings', [ClientBookingController::class, 'index']);
             Route::post('/bookings', [ClientBookingController::class, 'store']);
             Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
