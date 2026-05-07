@@ -45,7 +45,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::put('/profile', [AuthController::class, 'updateProfile']);
-        Route::put('/password/change', [AuthController::class, 'changePassword']);
+        Route::put('/password/reset', [AuthController::class, 'passwordReset']);
         
          Route::post('/save-token', [DeviceTokenController::class, 'store']);
 

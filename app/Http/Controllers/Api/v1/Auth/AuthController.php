@@ -79,7 +79,7 @@ class AuthController extends Controller
     | CHANGE PASSWORD
     | =========================
     */
-    public function changePassword(Request $request)
+    public function passwordReset(Request $request)
     {
         $data = $request->validate([
             'current_password' => 'required',
