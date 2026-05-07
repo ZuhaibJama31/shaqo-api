@@ -1,7 +1,8 @@
-
 <?php
 
+namespace App\Notifications;
 use Illuminate\Notifications\Notification;
+
 class BookingCreatedNotification extends Notification
 {
     public $booking;
