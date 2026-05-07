@@ -12,6 +12,24 @@ use App\Notifications\BookingCreatedNotification;
 
 class ClientBookingController extends Controller
 {
+
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        $bookings = Booking::with(['worker.user', 'worker.category'])
+            ->where('client_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->values()
+            ->map(function ($booking, $index) {
+                $booking->client_booking_number = $index + 1;
+                return $booking;
+            });
+
+        return response()->json($bookings);
+    }
+
     public function store(Request $request, FCMService $fcm)
     {
         $user = $request->user();
