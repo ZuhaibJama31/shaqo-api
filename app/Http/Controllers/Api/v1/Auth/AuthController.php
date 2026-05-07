@@ -74,40 +74,33 @@ class AuthController extends Controller
         return response()->json($request->user());
     }
 
-    /*
-    | =========================
-    | CHANGE PASSWORD
-    | =========================
-    */
     public function passwordReset(Request $request)
-    {
-        $data = $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:6'
-        ]);
+{
+    $data = $request->validate([
+        'current_password' => ['required', 'string'],
+        'new_password' => ['required', 'string', 'min:8', 'different:current_password'],
+        'confirm_new_password' => ['required', 'same:new_password'],
+    ]);
 
-        $user = $request->user();
+    $user = $request->user();
 
-        if (!Hash::check($data['current_password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'current_password' => 'Current password is incorrect'
-            ]);
-        }
-
-        $user->update([
-            'password' => Hash::make($data['new_password'])
-        ]);
-
-        return response()->json([
-            'message' => 'Password updated successfully'
+    // Verify the old password
+    if (!Hash::check($data['current_password'], $user->password)) {
+        throw ValidationException::withMessages([
+            'current_password' => ['The provided password does not match our records.'],
         ]);
     }
 
-    /*
-    | =========================
-    | LOGOUT
-    | =========================
-    */
+    // Update and save
+    $user->update([
+        'password' => Hash::make($data['new_password'])
+    ]);
+
+    return response()->json([
+        'message' => 'Password updated successfully.'
+    ]);
+}
+
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
@@ -116,34 +109,31 @@ class AuthController extends Controller
             'message' => 'Logged out successfully'
         ]);
     }
+    
+    
+    public function updateProfile(Request $request)
+    
+    {
+        $user = $request->user();
 
-    /*
-| =========================
-| UPDATE USER PROFILE
-| =========================
-*/
-public function updateProfile(Request $request)
-{
-    $user = $request->user();
+        $data = $request->validate([
+            'name'  => 'sometimes|required|string',
+            'phone' => 'sometimes|required|unique:users,phone,' . $user->id,
+        ]);
 
-    $data = $request->validate([
-        'name'  => 'sometimes|required|string',
-        'phone' => 'sometimes|required|unique:users,phone,' . $user->id,
-    ]);
+        if (isset($data['name'])) {
+            $user->name = $data['name'];
+        }
 
-    if (isset($data['name'])) {
-        $user->name = $data['name'];
-    }
+        if (isset($data['phone'])) {
+            $user->phone = $data['phone'];
+        }
 
-    if (isset($data['phone'])) {
-        $user->phone = $data['phone'];
-    }
+        $user->save();
 
-    $user->save();
-
-    return response()->json([
-        'message' => 'Profile updated successfully',
-        'user' => $user
-    ]);
+            return response()->json([
+                'message' => 'Profile updated successfully',
+                'user' => $user
+            ]);
 }
 }
