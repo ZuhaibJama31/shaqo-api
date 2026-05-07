@@ -15,6 +15,7 @@ class ClientBookingController extends Controller
 
     public function index(Request $request)
     {
+        
         $user = $request->user();
 
         $bookings = Booking::with(['worker.user', 'worker.category'])
