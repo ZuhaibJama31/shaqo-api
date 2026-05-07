@@ -4,37 +4,14 @@ namespace App\Http\Controllers\Api\v1\Client;
 
 use App\Http\Controllers\Api\v1\Controller;
 use App\Models\Booking;
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Services\FCMService;
 use App\Notifications\BookingCreatedNotification;
 
-
 class ClientBookingController extends Controller
 {
-    /**
-     * GET api/v1/client/bookings
-     */
-    public function index(Request $request)
-    {
-        $user = $request->user();
-
-        $bookings = Booking::with(['worker.user', 'worker.category'])
-            ->where('client_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->values()
-            ->map(function ($booking, $index) {
-                $booking->client_booking_number = $index + 1;
-                return $booking;
-            });
-
-        return response()->json($bookings);
-    }
-
-    /**
-     * POST api/v1/client/bookings
-     */
     public function store(Request $request, FCMService $fcm)
     {
         $user = $request->user();
@@ -47,74 +24,54 @@ class ClientBookingController extends Controller
             'scheduled_at' => 'required|date|after:now',
         ]);
 
-        // 1. Create booking
-        $booking = Booking::create([
-            'client_id'    => $user->id,
-            'worker_id'    => $data['worker_id'],
-            'description'  => $data['description'],
-            'address'      => $data['address'],
-            'city'         => $data['city'],
-            'scheduled_at' => $data['scheduled_at'],
-            'status'       => 'pending',
-        ]);
+        $booking = DB::transaction(function () use ($user, $data, $fcm) {
 
-        /* 2. GET ADMINS (Eager load deviceTokens for performance)
-        $admins = User::where('role', 'admin')->with('deviceTokens')->get();
+            // 1. Create booking
+            $booking = Booking::create([
+                'client_id'    => $user->id,
+                'worker_id'    => $data['worker_id'],
+                'description'  => $data['description'],
+                'address'      => $data['address'],
+                'city'         => $data['city'],
+                'scheduled_at' => $data['scheduled_at'],
+                'status'       => 'pending',
+            ]);
 
-        // 3. Notify Admins
-        foreach ($admins as $admin) {
-            
+            $booking->load('client');
+
+            // 2. Get the single admin
+            $admin = User::where('role', 'admin')->with('deviceTokens')->first();
+
+            if (!$admin) {
+                return $booking; // no admin found, skip notifications
+            }
+
+            // 3. DB notification
             $admin->notify(new BookingCreatedNotification($booking));
             
 
-            // ✅ Send PUSH via FCM
+            // 4. FCM push
             $tokens = $admin->deviceTokens->pluck('token')->toArray();
 
             if (!empty($tokens)) {
                 $fcm->send(
                     $tokens,
                     'New Booking',
-                    'A client created a new booking',
-                    ['booking_id' => (string)$booking->id]
+                    "{$user->name} made a booking — {$booking->city}",
+                    [
+                        'type'       => 'new_booking',
+                        'booking_id' => (string) $booking->id,
+                        'client_id'  => (string) $user->id,
+                    ]
                 );
             }
-        }
-            */
+
+            return $booking;
+        });
 
         return response()->json([
             'message' => 'Booking created successfully',
             'booking' => $booking->load(['worker.user', 'client']),
         ], 201);
-    }
-
-    /**
-     * GET api/v1/client/bookings/{id}
-     */
-    public function show(Request $request, $id)
-    {
-        $user = $request->user();
-
-        $booking = Booking::with(['worker.user', 'worker.category'])
-            ->where('client_id', $user->id)
-            ->findOrFail($id);
-
-        return response()->json($booking);
-    }
-
-    /**
-     * DELETE api/v1/client/bookings/{id}
-     */
-    public function destroy(Request $request, $id)
-    {
-        $user = $request->user();
-
-        $booking = Booking::where('client_id', $user->id)
-            ->findOrFail($id);
-
-        $booking->delete();
-
-        return response()->json([
-            'message' => 'Booking deleted successfully'
-        ]);
     }
 }

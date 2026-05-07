@@ -1,10 +1,15 @@
 <?php
 
 namespace App\Notifications;
-use Illuminate\Notifications\Notification;
 
-class BookingCreatedNotification extends Notification
+use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Bus\Queueable;
+
+class BookingCreatedNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public $booking;
 
     public function __construct($booking)
@@ -19,10 +24,19 @@ class BookingCreatedNotification extends Notification
 
     public function toArray($notifiable)
     {
+        $client = $this->booking->client;
+
         return [
-            'title' => 'New Booking',
-            'message' => 'A client created a booking',
-            'booking_id' => $this->booking->id,
+            'type'         => 'new_booking',
+            'title'        => 'New Booking',
+            'message'      => "{$client->name} made a booking",
+            'booking_id'   => $this->booking->id,
+            'client_id'    => $client->id,
+            'client_name'  => $client->name,
+            'client_phone' => $client->phone, // ← admin uses this to call
+            'scheduled_at' => $this->booking->scheduled_at,
+            'address'      => $this->booking->address,
+            'city'         => $this->booking->city,
         ];
     }
 }
