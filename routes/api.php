@@ -2,9 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 use App\Http\Controllers\Api\v1\Auth\AuthController;
-use App\Http\Controllers\Api\v1\Auth\DeviceTokenController;
+
 use App\Http\Controllers\Api\v1\Admin\AdminBookingController;
 use App\Http\Controllers\Api\v1\Admin\NotificationController;
 use App\Http\Controllers\Api\v1\Admin\AdminCategoryController;
@@ -52,7 +53,7 @@ Route::prefix('v1')->group(function () {
             $user->expo_token = $request->token;
             $user->save();
             return response()->json(['message' => 'Token saved']);
-            });
+        });
 
          Route::apiResource('workers', WorkerController::class);
         
