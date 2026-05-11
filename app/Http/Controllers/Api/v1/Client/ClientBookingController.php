@@ -142,4 +142,37 @@ class ClientBookingController extends Controller
 
         return response()->json(['message' => 'Status updated', 'booking' => $booking]);
     }
+
+
+    public function cancel(Request $request, $id)
+{
+    $user = $request->user();
+
+    $booking = Booking::where('client_id', $user->id)
+        ->whereIn('status', ['pending', 'accepted']) 
+        ->findOrFail($id);
+
+    $booking->update(['status' => 'cancelled']);
+
+    // 🔔 Notify admin
+    $adminTokens = User::where('role', 'admin')
+        ->whereNotNull('expo_token')
+        ->pluck('expo_token')
+        ->map(fn($t) => (string) $t)
+        ->all();
+
+    if (!empty($adminTokens)) {
+        $this->expo->send(
+            $adminTokens,
+            '🚫 Booking Cancelled',
+            "{$user->name} cancelled their booking",
+            ['type' => 'booking_cancelled', 'booking_id' => (string) $booking->id]
+        );
+    }
+
+    return response()->json([
+        'message' => 'Booking cancelled',
+        'booking' => $booking,
+    ]);
+}
 }
