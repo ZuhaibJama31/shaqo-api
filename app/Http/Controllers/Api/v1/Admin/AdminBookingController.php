@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\v1\Controller;
 use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Services\FCMService;
-use App\Notifications\BookingStatusUpdatedNotification;
+use App\Events\BookingStatusUpdated;
 
 class AdminBookingController extends Controller
 {
@@ -108,8 +108,8 @@ class AdminBookingController extends Controller
 
     if ($client) {
 
-        // ✅ Save DB notification
-        $client->notify(new BookingStatusUpdatedNotification($booking));
+        
+        event(new BookingStatusUpdated($booking));
 
         // ✅ Send PUSH
         $tokens = $client->deviceTokens->pluck('token')->toArray();
