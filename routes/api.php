@@ -77,6 +77,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/bookings', [ClientBookingController::class, 'store']);
             Route::get('/bookings/{id}', [ClientBookingController::class, 'show']);
             Route::put('/bookings/{id}', [ClientBookingController::class, 'update']);
+            Route::put('/bookings/{id}', [ClientBookingController::class, 'cancel']);
             Route::delete('/bookings/{id}', [ClientBookingController::class, 'destroy']);
             Route::get('/profile', [ClientController::class, 'show']);
         });
