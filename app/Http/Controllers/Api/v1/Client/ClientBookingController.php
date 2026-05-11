@@ -43,7 +43,7 @@ class ClientBookingController extends Controller
             'status'       => 'pending',
         ]);
 
-        // 🔔 Notify all admins
+        // 🔔 Notify admin
         $adminTokens = User::where('role', 'admin')
             ->whereNotNull('expo_token')
             ->pluck('expo_token')
@@ -59,10 +59,55 @@ class ClientBookingController extends Controller
             );
         }
 
-        return response()->json(['message' => 'Booking created', 'booking' => $booking], 201);
+        return response()->json([
+            'message' => 'Booking created',
+            'booking' => $booking,
+        ], 201);
     }
 
-    // Called by admin/worker to update booking status
+    public function show(Request $request, $id)
+    {
+        $user = $request->user();
+
+        $booking = Booking::with(['worker.user', 'worker.category'])
+            ->where('client_id', $user->id)
+            ->findOrFail($id);
+
+        return response()->json($booking);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = $request->user();
+
+        $booking = Booking::where('client_id', $user->id)
+            ->findOrFail($id);
+
+        $booking->update($request->only([
+            'description',
+            'address',
+            'city',
+            'scheduled_at',
+        ]));
+
+        return response()->json([
+            'message' => 'Booking updated',
+            'booking' => $booking,
+        ]);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+
+        $booking = Booking::where('client_id', $user->id)
+            ->findOrFail($id);
+
+        $booking->delete();
+
+        return response()->json(['message' => 'Booking deleted']);
+    }
+
     public function updateStatus(Request $request, Booking $booking)
     {
         $request->validate([
@@ -72,8 +117,7 @@ class ClientBookingController extends Controller
         $booking->update(['status' => $request->status]);
         $booking->refresh();
 
-        // 🔔 Notify the client
-        $clientUser = $booking->client ?? User::find($booking->client_id);
+        $clientUser  = $booking->client ?? User::find($booking->client_id);
         $clientToken = $clientUser?->expo_token ? (string) $clientUser->expo_token : null;
 
         if ($clientToken) {
