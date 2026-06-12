@@ -4,7 +4,6 @@ namespace App\Services;
 
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
 
 class DiditPhoneVerificationService
 {
@@ -50,7 +49,11 @@ class DiditPhoneVerificationService
     private function call(string $path, array $data): array
     {
         if (!$this->apiKey) {
-            throw new RuntimeException('DIDIT_API_KEY is not configured.');
+            return [
+                'error' => true,
+                'status' => 500,
+                'message' => 'DIDIT_API_KEY is not configured.',
+            ];
         }
 
         try {
