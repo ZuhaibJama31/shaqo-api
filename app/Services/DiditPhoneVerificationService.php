@@ -2,26 +2,19 @@
 
 namespace App\Services;
 
-use Illuminate\Http\Client\Response;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 class DiditPhoneVerificationService
 {
-    private string $apiKey;
+    private ?string $apiKey;
     private string $baseUrl;
 
     public function __construct()
     {
         $this->apiKey = config('didit.api_key');
-        $this->baseUrl = config('didit.base_url');
-    }
-
-    private function sendRequest(string $method, string $path, array $data): Response
-    {
-        return Http::withHeaders([
-            'x-api-key' => $this->apiKey,
-            'Content-Type' => 'application/json',
-        ])->$method("{$this->baseUrl}/{$path}", $data);
+        $this->baseUrl = config('didit.base_url', 'https://verification.didit.me/v3');
     }
 
     public function sendCode(
@@ -31,7 +24,7 @@ class DiditPhoneVerificationService
         string $preferredChannel = 'whatsapp',
         string $locale = 'en-US'
     ): array {
-        $response = $this->sendRequest('post', 'phone/send/', [
+        return $this->call('phone/send/', [
             'phone_number' => $phoneNumber,
             'options' => [
                 'code_size' => $codeSize,
@@ -40,8 +33,6 @@ class DiditPhoneVerificationService
             ],
             'vendor_data' => $vendorData,
         ]);
-
-        return $response->json();
     }
 
     public function checkCode(
@@ -49,12 +40,48 @@ class DiditPhoneVerificationService
         string $code,
         string $voipNumberAction = 'DECLINE'
     ): array {
-        $response = $this->sendRequest('post', 'phone/check/', [
+        return $this->call('phone/check/', [
             'phone_number' => $phoneNumber,
             'code' => $code,
             'voip_number_action' => $voipNumberAction,
         ]);
+    }
 
-        return $response->json();
+    private function call(string $path, array $data): array
+    {
+        if (!$this->apiKey) {
+            throw new RuntimeException('DIDIT_API_KEY is not configured.');
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'x-api-key' => $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->post("{$this->baseUrl}/{$path}", $data);
+
+            if ($response->failed()) {
+                return [
+                    'error' => true,
+                    'status' => $response->status(),
+                    'message' => 'Didit API request failed.',
+                    'details' => $response->json(),
+                ];
+            }
+
+            return $response->json() ?: [];
+        } catch (RequestException $e) {
+            return [
+                'error' => true,
+                'status' => $e->response?->status() ?? 500,
+                'message' => 'Didit API returned an error.',
+                'details' => $e->response?->json(),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'error' => true,
+                'status' => 500,
+                'message' => 'Could not reach Didit API: ' . $e->getMessage(),
+            ];
+        }
     }
 }
