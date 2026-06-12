@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Api\v1\Auth\AuthController;
 use App\Http\Controllers\Api\v1\Auth\DeviceTokenController;
+use App\Http\Controllers\Api\v1\Auth\PhoneVerificationController;
 use App\Http\Controllers\Api\v1\Admin\AdminBookingController;
 use App\Http\Controllers\Api\v1\Admin\NotificationController;
 use App\Http\Controllers\Api\v1\Admin\AdminCategoryController;
@@ -45,6 +46,10 @@ Route::prefix('v1')->group(function () {
         Route::put('/profile', [AuthController::class, 'updateProfile']);
         Route::put('/password/reset', [AuthController::class, 'passwordReset']);
         
+        // Phone Verification (Didit)
+        Route::post('/phone/send', [PhoneVerificationController::class, 'send']);
+        Route::post('/phone/check', [PhoneVerificationController::class, 'check']);
+
         // Device Token - Save push notification token
         Route::post('/save-token', [DeviceTokenController::class, 'store']);
 

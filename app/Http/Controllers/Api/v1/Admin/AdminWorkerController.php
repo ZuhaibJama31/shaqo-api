@@ -22,7 +22,7 @@ class AdminWorkerController extends Controller
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
-        }
+        } 
 
         if ($request->filled('city')) {
             $query->whereHas('user', function ($q) use ($request) {
